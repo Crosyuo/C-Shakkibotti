@@ -16,8 +16,4 @@ int nappulan_vari(int nappula)
 int vastustaja(int pelaaja)
 {
 	return pelaaja == VALKEA ? MUSTA : VALKEA;
-
-	//if (pelaaja == VALKEA)
-	//	return MUSTA;
-	//return VALKEA;
 }
