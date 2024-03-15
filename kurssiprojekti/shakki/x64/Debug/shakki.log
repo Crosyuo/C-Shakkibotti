@@ -1,2 +1,17 @@
 ﻿  main.cpp
+C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\shakki\asema.h(93,21): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\shakki\asema.h(95,14): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\shakki\asema.h(105,20): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\shakki\asema.h(107,14): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\shakki\asema.h(115,29): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
   shakki.vcxproj -> C:\Users\crist\Documents\GitHub\CPP-Shakkibotti\kurssiprojekti\x64\Debug\shakki.exe

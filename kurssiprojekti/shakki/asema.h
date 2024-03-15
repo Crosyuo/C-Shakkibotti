@@ -1,8 +1,23 @@
 #pragma once
+#include <limits>
+#include <map>
 #include <vector>
 #include "shakki.h"
 #include "siirto.h"
 
+
+// Minimax-funktion palauttama arvo. Sis‰lt‰‰ sek‰
+// minimax-arvon ett‰ sit‰ vastaavan parhaan siirron.
+class MinimaxArvo
+{
+public:
+	MinimaxArvo(float arvo, Siirto siirto) :
+		_arvo(arvo), _siirto(siirto)
+	{}
+
+	float	_arvo;
+	Siirto	_siirto;
+};
 
 class Asema
 {
@@ -54,6 +69,166 @@ public:
 			}
 		}
 	}
+
+
+	// Pisteytt‰‰ pelin lopputuloksen seuraavasti:
+	//
+	// Valkea tehnyt matin			1000000
+	// Tasapeli (patti)				0
+	// Musta tehnyt matin		   -1000000
+	//
+	// Funktiota kutsutaan, kun asemassa ei ole en‰‰ yht‰‰n laillista
+	// siirtoa (anna_siirrot on palattanyt tyhj‰n siirtovektorin).
+	//
+	float pisteyta_lopputulos(int syvyys) const
+	{
+		if (_siirtovuoro == VALKEA)
+		{
+			// Etsit‰‰n valkean kuningas
+			int rivi, linja;
+			etsi_nappula(wK, rivi, linja);
+
+			// Onko valkean kuningas uhattu?
+			if (onko_ruutu_uhattu(rivi, linja, MUSTA))
+				return -1000000 + syvyys; // musta on tehnyt matin
+			else
+				return 0 + syvyys; // patti
+		}
+		else
+		{
+			// Etsit‰‰n mustan kuningas
+			int rivi, linja;
+			etsi_nappula(bK, rivi, linja);
+
+			// Onko mustan kuningas uhattu?
+			if (onko_ruutu_uhattu(rivi, linja, VALKEA))
+				return 1000000 - syvyys; // valkea on tehnyt matin
+			else
+				return 0 - syvyys; // patti
+		}
+	}
+
+
+	// Pisteytt‰‰ shakkiaseman heuristisesti.
+	float evaluoi() const
+	{
+		return 1.0 * materiaali() + 0.05 * mobiliteetti();
+	}
+
+
+
+
+	//
+	// Palauttaa aseman minimax-arvon. Syvyys m‰‰ritt‰‰,
+	// kuinka monta asekelta syvemm‰lle pelipuuta k‰yd‰‰n l‰pi.
+	//
+	// Testaaminen esim. p‰‰ohjelmasta:
+	//
+	// Asema asema;
+	// MinimaxArvo arvo = asema.minimax(4);
+	// 
+	// Nyt tietokoneen siirto saadaan pelattua n‰in:
+	// asema.tee_siirto(arvo._siirto);
+	//
+	MinimaxArvo minimax(int syvyys)
+	{
+		// Generoidaan aseman siirrot.
+		std::vector<Siirto> siirrot;
+		anna_siirrot(siirrot);
+
+		if (siirrot.size() == 0)
+		{
+			// Rekursion kantatapaus 1:
+			// peli on p‰‰ttynyt (ei yht‰‰n laillista siirtoa).
+			return MinimaxArvo(pisteyta_lopputulos(syvyys), Siirto());
+		}
+
+		if (syvyys == 0)
+		{
+			// Rekursion kantatapaus 2:
+			// ollaan katkaisusyvyydess‰.
+			return MinimaxArvo(evaluoi(), Siirto());
+		}
+
+		// Siirtoja on j‰ljell‰ ja ei olla katkaisusyvyydess‰,
+		// joten kokeillaan yksitellen mahdollisia siirtoja,
+		// ja kutsutaan minimax:a kullekin seuraaja-asemalle.
+		// Otetaan paras minimax-arvo talteen (alustetaan
+		// paras_arvo mahdollisimman huonoksi siirtovuoroisen
+		// pelaajan kannalta).
+		float paras_arvo = _siirtovuoro == VALKEA ?
+			std::numeric_limits<float>::lowest() : std::numeric_limits<float>::max();
+		Siirto paras_siirto;
+		for (Siirto& s : siirrot)
+		{
+			Asema uusi = *this;
+			uusi.tee_siirto(s);
+
+			// Rekursioasekel: kutsutaan minimax:ia seuraaja-asemalle.
+			MinimaxArvo arvo = uusi.minimax(syvyys - 1);
+
+			// Jos saatiin paras arvo, otetaan se talteen.
+			if (_siirtovuoro == VALKEA && arvo._arvo > paras_arvo)
+			{
+				paras_arvo = arvo._arvo;
+				paras_siirto = s;
+			}
+			else if (_siirtovuoro == MUSTA && arvo._arvo < paras_arvo)
+			{
+				paras_arvo = arvo._arvo;
+				paras_siirto = s;
+			}
+		}
+
+		// Palautetaan paras arvo.
+		return MinimaxArvo(paras_arvo, paras_siirto);
+	}
+
+
+
+	// Laskee materiaalitasapainon (valkean nappuloiden arvo - mustan nappuloiden arvo).
+	// Nappuloiden arvot:
+	//
+	// sotilas		1
+	// ratsu		3
+	// l‰hetti		3
+	// torni		5
+	// daami		9
+	//
+	float materiaali() const
+	{
+		// Liitet‰‰n nappulatyyppeihin niiden arvot.
+		static std::map<int, float> nappuloiden_arvot = {
+			{wP,  1.0f}, {wN,  3.0f}, {wB,  3.0f}, {wR,  5.0f}, {wQ,  9.0f},
+			{bP, -1.0f}, {bN, -3.0f}, {bB, -3.0f}, {bR, -5.0f}, {bQ, -9.0f},
+			{NA,  0.0f}
+		};
+
+		float arvo = 0;
+		for (int rivi = 0; rivi < 8; ++rivi)
+			for (int linja = 0; linja < 8; ++linja)
+			{
+				int nappula = _lauta[rivi][linja];
+				arvo += nappuloiden_arvot[nappula];
+			}
+		return arvo;
+	}
+
+
+	// Palauttaa valkean ja mustan (raaka)siirtojen lukum‰‰rien erotuksen.
+	float mobiliteetti() const
+	{
+		std::vector<Siirto> valkean_siirrot;
+		std::vector<Siirto> mustan_siirrot;
+
+		// Funktion totetus on raskas, koska generoidaan raakasiirtoja.
+		// TODO: voisiko optimoida optimoida jotenkin?
+		anna_kaikki_raakasiirrot(VALKEA, valkean_siirrot);
+		anna_kaikki_raakasiirrot(MUSTA, mustan_siirrot);
+
+		return (float)valkean_siirrot.size() - (float)mustan_siirrot.size();
+	}
+
 
 
 	// Antaa aseman kaikki raakasiirrot

@@ -59,5 +59,5 @@ void Siirto::tulosta() const
     }
 
     // Tulostetaan muodossa "e2e4"
-    std::cout << "Sallitut siirrot: (" << alkuruutu << loppuruutu << temp << ")";
+    std::cout << "Sallitut siirrot: ( " << alkuruutu << loppuruutu << temp << " )";
 }
